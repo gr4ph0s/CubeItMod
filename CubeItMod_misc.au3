@@ -3,8 +3,8 @@
  AutoIt Version : 3.3.12.0
  Auteur:         Gr4ph0s
 
- Fonction du Script :
-	Modèle de Script AutoIt.
+ Script function:
+	Miscellaneous Function used for convert BFB File from KISSlicer - PRO to Cubex 3D printer
 
 #ce ----------------------------------------------------------------------------
 Local $sFile

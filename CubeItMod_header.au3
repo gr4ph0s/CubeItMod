@@ -3,8 +3,8 @@
  AutoIt Version : 3.3.12.0
  Auteur:         Gr4ph0s
 
- Fonction du Script :
-	Modèle de Script AutoIt.
+ Script function:
+	Function To read Data and Assign value with the header of a BFB File from KISSlicer - PRO
 
 #ce ----------------------------------------------------------------------------
 
