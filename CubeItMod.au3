@@ -29,7 +29,3 @@ Else
 	MsgBox(0,@extended,@error)
 EndIf
 
-
-Func bed_roughness_mm
-
-EndFunc
