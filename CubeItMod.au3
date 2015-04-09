@@ -15,6 +15,7 @@
 #include <Array.au3>
 #include <File.au3>
 #include "CubeItMod_header.au3" ;All functions concerning the header file.
+#include "CubeItMod_content.au3" ;All functions concerning the header file.
 #include "CubeItMod_misc.au3" ;All miscellaneous functions.
 
 
