@@ -42,52 +42,38 @@ EndFunc
 ; 				 : False & @error = 0 & @extended = 3 => Problem into Style Settings
 ; 				 : False & @error = 0 & @extended = 4 => Problem into Support Settings
 ; 				 : False & @error = 0 & @extended = 5 => Problem into Actual Slicing Settings As Used
-; Remarks .......: Maybe I will rework on this function if group's name of function often change ;) (for exemple Material Setting for Extruder/Support Setting etc...)
+; Remarks .......: Maybe I will rework on this function if group's name of function often change ;) (for exemple Material Setting for Extruder/Support Setting etc...
+; 				 : If they often change I will do function to search them automatically into the header.
 ; Related .......: b_getSettings
 ; Author ........: Gr4ph0s
 ; Link ..........: http://gr4ph0s.free.fr/
 ; ===============================================================================================================================
 Func b_getHeaderData()
-	If b_getSettings("; *** Printer Settings ***","; *** Material Settings for Extruder") Then ;look b_getSettings informations ;)
-		If b_getSettings("; *** Material Settings for Extruder 1 ***","; *** Material Settings for Extruder 2 ***","matSetEx1_") Then
-			If b_getSettings("; *** Material Settings for Extruder 2 ***","; *** Style Settings ***","matSetEx2_") Then
-				If b_getSettings("; *** Style Settings ***","; *** Support Settings ***","styleSet_") Then
-					If b_getSettings("; *** Support Settings ***","; *** Actual Slicing Settings As Used ***","suppSet_") Then
-						If b_getSettings("; *** Actual Slicing Settings As Used ***","; *** G-code Prefix ***","actualSliceSet_") Then
-							Return True
-						Else
-							SetError(0,5,"Actual Slicing Settings As Used")
-							Return False
-						EndIf
-					Else
-						SetError(0,4,"SupportSettings")
-						Return False
-					EndIf
-				Else
-					SetError(0,3,"StyleSettings")
-					Return False
-				EndIf
-			Else
-				SetError(0,2,"MaterialSettingExtruder2")
-				Return False
-			EndIf
+	Local $aDataToGet[0][3] ; Array for store.[0][0] = sFirstSetting. [0][1] = $sLastSetting. [0][2] = $sLastSetting. Look b_getSettings() for know the use of these variables.
+		_ArrayAdd($aDataToGet, "; *** Printer Settings ***|; *** Material Settings for Extruder 1 ***|printSet_")
+		_ArrayAdd($aDataToGet, "; *** Material Settings for Extruder 1 ***|; *** Material Settings for Extruder 2 ***|matSetEx1_")
+		_ArrayAdd($aDataToGet, "; *** Material Settings for Extruder 2 ***|; *** Style Settings ***|matSetEx2_")
+		_ArrayAdd($aDataToGet, "; *** Style Settings ***|; *** Support Settings ***|styleSet_")
+		_ArrayAdd($aDataToGet, "; *** Support Settings ***|; *** Actual Slicing Settings As Used ***|suppSet_")
+		_ArrayAdd($aDataToGet, "; *** Actual Slicing Settings As Used ***|; *** G-code Prefix ***|actualSliceSet_")
+
+	For $i = 0 To UBound($aDataToGet))-1
+		If b_getSettings($aDataToGet[$i][0],$aDataToGet[$i][1],$aDataToGet[$i][2]) Then
+			ContinueLoop
 		Else
-			SetError(0,1,"MaterialSettingExtruder1")
+			SetError(0,$i,"Problem into "& StringRegExp($aDataToGet[$i][0], "([A-Za-z_ ]+ )", 3)")
 			Return False
-		EndIf
-	Else
-		SetError(0,0,"PrinterSettings")
-		Return False
-	EndIf
+	Next
+	Return True
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: b_getSettings
 ; Description ...: set variable and value with text information beetwin 2 group's name of function.
-; Syntax ........: b_getSettings($sFirstSetting, $sLastSetting[, $sPrefix = ""])
+; Syntax ........: b_getSettings($sFirstSetting, $sLastSetting, $sPrefix)
 ; Parameters ....: $sFirstSetting       - A string value. Should be the begin group's name of function. Exemple "; *** Printer Settings ***"
 ;                  $sLastSetting        - A string value. Should be the end group's name of function. Exemple "; *** Material Settings for Extruder" for Printer Settings.
-;                  $sPrefix             - [optional] A string value. Default is "". A prefix added into final variableName.
+;                  $sPrefix             - A string value. A prefix added into final variableName.
 ; Return values .: True if sucess
 ; 				 : False & @error = 0 & @extended = 1 => Problem into a_getSettingsLines
 ; 				 : False & @error = 0 & @extended = 2 => Problem into s_readData
@@ -100,7 +86,7 @@ EndFunc
 ; Author ........: Gr4ph0s
 ; Link ..........: http://gr4ph0s.free.fr/
 ; ===============================================================================================================================
-Func b_getSettings($sFirstSetting,$sLastSetting,$sPrefix = "")
+Func b_getSettings($sFirstSetting,$sLastSetting,$sPrefix)
 	;Get Lines Number
 	Local $aPrinterSettingLines = a_getSettingsLines($sFirstSetting,$sLastSetting)
 		If Not IsArray($aPrinterSettingLines) Then
