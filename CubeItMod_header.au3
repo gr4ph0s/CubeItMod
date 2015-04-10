@@ -57,12 +57,13 @@ Func b_getHeaderData()
 		_ArrayAdd($aDataToGet, "; *** Support Settings ***|; *** Actual Slicing Settings As Used ***|suppSet_")
 		_ArrayAdd($aDataToGet, "; *** Actual Slicing Settings As Used ***|; *** G-code Prefix ***|actualSliceSet_")
 
-	For $i = 0 To UBound($aDataToGet))-1
+	For $i = 0 To UBound($aDataToGet)-1
 		If b_getSettings($aDataToGet[$i][0],$aDataToGet[$i][1],$aDataToGet[$i][2]) Then
 			ContinueLoop
 		Else
-			SetError(0,$i,"Problem into "& StringRegExp($aDataToGet[$i][0], "([A-Za-z_ ]+ )", 3)")
+			SetError(0,$i,"Problem into "& StringRegExp($aDataToGet[$i][0], "([A-Za-z_ ]+ )", 3))
 			Return False
+		EndIf
 	Next
 	Return True
 EndFunc
