@@ -19,9 +19,13 @@
 #include "CubeItMod_misc.au3" ;All miscellaneous functions.
 
 
-Global $sFile = "testV15B117.bfb"
+Global $sFile = @ScriptDir&'/'&"testV15B117.bfb"
+Global $fFile
 Global $iFileLinesNumber = _FileCountLines ($sFile)
 Global $aVersion = a_readVersion()
+
+b_createBackup($sFile)
+f_createFile($sFile)
 
 
 if b_getHeaderData() Then
@@ -29,4 +33,13 @@ if b_getHeaderData() Then
 Else
 	MsgBox(0,@extended,@error)
 EndIf
+
+;All code bellow this line are temporary....
+
+Global $aDataToGet[0][3] ; Array for store.[0][0] = sFirstSetting. [0][1] = $sLastSetting. [0][2] = $sLastSetting. Look b_getSettings() for know the use of these variables.
+	_ArrayAdd($aDataToGet, "; *** G-code Prefix ***|; *** Main G-code ***|contentHeader_")
+$test = a_getContentDataByName($aDataToGet)
+$test = a_readContentData($test)
+$test = a_setContentArrayData($test)
+$test2 = b_WriteData($sFile,$test)
 

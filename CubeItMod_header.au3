@@ -137,7 +137,7 @@ EndFunc
 Func a_getSettingsLines($sFirstSetting,$sLastSetting)
 	Local $iStartLine,$iEndLine,$aOutput[1][2],$i = 0
 	While $i <= $iFileLinesNumber
-		$sLine = FileReadLine($sFile,$i)
+		$sLine = FileReadLine($sFile&".bak",$i)
 		if StringInStr ($sLine,$sFirstSetting) <> 0 Then ;Looking for $sFirstSetting in the line
 			$iStartLine = Int($i)
 		EndIf
@@ -172,7 +172,7 @@ EndFunc
 Func s_readData($aLines)
 	Local $sOutput = ""
 	For $i = 2 To ($aLines[0][1] - $aLines[0][0]) - 2
- 		$sOutput = $sOutput & FileReadLine($sFile,$aLines[0][0]+$i) & @CRLF
+ 		$sOutput = $sOutput & FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
 		if @error Then
 			SetError( 0 , @error)
 			Return False

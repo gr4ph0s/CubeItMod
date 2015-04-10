@@ -8,7 +8,10 @@
 
 #ce ----------------------------------------------------------------------------
 Local $sFile
-func i_createBackup($sFile)
-	return FileMove($sFile, $sFile & ".bak", 1)
+Func b_createBackup($sFile)
+	Return FileMove($sFile, $sFile & ".bak", 1)
 EndFunc
 
+Func f_createFile($sFile)
+	Return FileOpen($sFile,9)
+EndFunc
