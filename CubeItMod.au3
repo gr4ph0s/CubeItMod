@@ -23,13 +23,13 @@ Global $sFile = @ScriptDir&'/'&"testV15B117.bfb"
 Global $fFile
 Global $iFileLinesNumber = _FileCountLines ($sFile)
 Global $aVersion = a_readVersion()
-
+Global $aOption[9]
 ;~ b_createBackup($sFile)
 ;~ f_createFile($sFile)
 
 
 if b_getHeaderData() Then
-;~ 	MsgBox(0,"",$suppSet_support_inflate_mm)
+	MsgBox(0,"",$Sup_support_inflate_mm)
 Else
 	MsgBox(0,@extended,@error)
 EndIf
@@ -53,14 +53,13 @@ EndIf
 ;$aOption[5] = head mm/s
 ;$aOption[6] = isFirstLayer
 ;$aOption[7] = isCurrentlyPrinting
-
-
-
+;$aOption[8] = Mx08 RPM
 
 
 $test = a_getContentDataBySearch()
-$test = a_readContentData($test)
-$test = a_setContentArrayData($test)
-_ArrayDisplay($test)
-
-
+_ArrayDisplay($test,'bidule1')
+For $i = 0 to UBound($test)-1
+	 $testzz = a_readContentData($test[$i][0],$test[$i][1])
+	 $testfinal = a_setContentArrayData($testzz)
+	 _ArrayDisplay($testfinal,'bidule3')
+Next

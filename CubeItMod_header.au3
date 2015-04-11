@@ -11,17 +11,42 @@
 Local $sFile ,$iFileLinesNumber ;Normally thoses variables are set in the cube.au3
 
 
+
+Func a_SearchIntoFile()
+	Local $aDataToGet[0][3],$sLine,$aBuffer,$sBuffer,$bIsFirst = True,  $i = 0
+	Local $fFile = FileOpen($sFile)
+;~ 	While $i <= $iFileLinesNumber
+
+	While $i <= 1789
+		$sLine = FileReadLine($fFile,$i)
+
+		If StringInStr ($sLine,"; *** G-code Prefix ***") <> 0 Then
+			$aBuffer = StringRegExp($sBuffer, "(?:; \*\*\* )([A-Za-z_ ]+)(\d*)", 3)
+			_ArrayAdd($aDataToGet,$sBuffer&"|"&$sLine&"|"&StringLeft($aBuffer[0],3)&$aBuffer[1]&"_")
+			ExitLoop
+		EndIf
+
+		If StringRegExp($sLine, "(?:; \*\*\* )([A-Za-z_ ]+)(\d*)", 0) Then
+			If $bIsFirst Then
+				$sBuffer = $sLine
+				$bIsFirst = False
+			Else
+				$aBuffer = StringRegExp($sBuffer, "(?:; \*\*\* )([A-Za-z_ ]+)(\d*)", 3)
+				_ArrayAdd($aDataToGet,$sBuffer&"|"&$sLine&"|"&StringLeft($aBuffer[0],3)&$aBuffer[1]&"_")
+				$sBuffer = $sLine
+			EndIf
+		EndIf
+		$i += 1
+	WEnd
+	Return $aDataToGet
+EndFunc
+
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: b_getHeaderData
 ; Description ...: Assign variables and values by reading the header .bfb file
 ; Syntax ........: b_getHeaderData()
 ; Return values .: True = no problem ! :D
-; 				 : False & @error = 0 & @extended = 0 => Problem into Printer Settings
-; 				 : False & @error = 0 & @extended = 1 => Problem into Material Setting Extruder1
-; 				 : False & @error = 0 & @extended = 2 => Problem into Material Setting Extruder2
-; 				 : False & @error = 0 & @extended = 3 => Problem into Style Settings
-; 				 : False & @error = 0 & @extended = 4 => Problem into Support Settings
-; 				 : False & @error = 0 & @extended = 5 => Problem into Actual Slicing Settings As Used
+; 				 : False & @error = 0 & @extended = x => Problem into Section
 ; Remarks .......: Maybe I will rework on this function if group's name of function often change ;) (for exemple Material Setting for Extruder/Support Setting etc...
 ; 				 : If they often change I will do function to search them automatically into the header.
 ; Related .......: b_getSettings
@@ -29,13 +54,7 @@ Local $sFile ,$iFileLinesNumber ;Normally thoses variables are set in the cube.a
 ; Link ..........: http://gr4ph0s.free.fr/
 ; ===============================================================================================================================
 Func b_getHeaderData()
-	Local $aDataToGet[0][3] ; Array for store.[0][0] = sFirstSetting. [0][1] = $sLastSetting. [0][2] = $sLastSetting. Look b_getSettings() for know the use of these variables.
-		_ArrayAdd($aDataToGet, "; *** Printer Settings ***|; *** Material Settings for Extruder 1 ***|printSet_")
-		_ArrayAdd($aDataToGet, "; *** Material Settings for Extruder 1 ***|; *** Material Settings for Extruder 2 ***|matSetEx1_")
-		_ArrayAdd($aDataToGet, "; *** Material Settings for Extruder 2 ***|; *** Style Settings ***|matSetEx2_")
-		_ArrayAdd($aDataToGet, "; *** Style Settings ***|; *** Support Settings ***|styleSet_")
-		_ArrayAdd($aDataToGet, "; *** Support Settings ***|; *** Actual Slicing Settings As Used ***|suppSet_")
-		_ArrayAdd($aDataToGet, "; *** Actual Slicing Settings As Used ***|; *** G-code Prefix ***|actualSliceSet_")
+	Local $aDataToGet = a_SearchIntoFile()
 
 	For $i = 0 To UBound($aDataToGet)-1
 		If b_getSettings($aDataToGet[$i][0],$aDataToGet[$i][1],$aDataToGet[$i][2]) Then
@@ -129,7 +148,10 @@ Func a_getSettingsLines($sFirstSetting,$sLastSetting)
 		EndIf
 		$i = $i + 1
 	WEnd
-	If $i == $iFileLinesNumber Then SetError( 0 , 0 ) Return False ;if $i = FileNumber that's mean string was not found so we set error ;)
+	If $i == $iFileLinesNumber Then
+		SetError( 0 , 0 )
+		Return False ;if $i = FileNumber that's mean string was not found so we set error ;)
+	EndIf
 	If $iStartLine == "" OR $iEndLine == "" Then
 		SetError(0 , 1)
 		Return False
