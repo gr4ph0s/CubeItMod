@@ -10,26 +10,6 @@
 
 Local $sFile ,$iFileLinesNumber ;Normally thoses variables are set in the cube.au3
 
-; #FUNCTION# ====================================================================================================================
-; Name ..........: a_readVersion
-; Description ...: Return an Array with the current Version and the Beta version.
-; Syntax ........: a_readVersion()
-; Return values .: Array [0] = Version
-; 				 : Array [1] = Beta Version
-; Error .........: 1 = Error into FileReadLine @extended for know why
-; Error .........: 2 = Error into StringRegExp @extended for know why
-; Author ........: Gr4ph0s
-; Link ..........: http://gr4ph0s.free.fr/
-; ===============================================================================================================================
-Func a_readVersion()
-	Local $sData = FileReadLine($sFile,3) ;Version string are into line 3
-	if @error Then Return  SetError(1,$sData)
-	Local $aData = StringRegExp($sData, "(\d+.\d+)", 3) ;Make data into array
-	if @error Then Return SetError(2,$aData)
-	$aData[0] = Number($aData[0]) ;Be sure its a float number like that we can compare it later if needed.
-	$aData[1] = Number($aData[1]) ;Be sure its a float number like that we can compare it later if needed.
-	Return $aData
-EndFunc
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: b_getHeaderData
@@ -137,7 +117,8 @@ EndFunc
 Func a_getSettingsLines($sFirstSetting,$sLastSetting)
 	Local $iStartLine,$iEndLine,$aOutput[1][2],$i = 0
 	While $i <= $iFileLinesNumber
-		$sLine = FileReadLine($sFile&".bak",$i)
+;~ 		$sLine = FileReadLine($sFile&".bak",$i)
+		$sLine = FileReadLine($sFile,$i)
 		if StringInStr ($sLine,$sFirstSetting) <> 0 Then ;Looking for $sFirstSetting in the line
 			$iStartLine = Int($i)
 		EndIf
@@ -172,7 +153,8 @@ EndFunc
 Func s_readData($aLines)
 	Local $sOutput = ""
 	For $i = 2 To ($aLines[0][1] - $aLines[0][0]) - 2
- 		$sOutput = $sOutput & FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
+;~  		$sOutput = $sOutput & FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
+ 		$sOutput = $sOutput & FileReadLine($sFile,$aLines[0][0]+$i) & @CRLF
 		if @error Then
 			SetError( 0 , @error)
 			Return False
@@ -202,7 +184,7 @@ func a_dataToArray($sData)
 			Return False
 		EndIf
 
-	Local $aOutput = StringRegExp($sData, "([A-Za-z_ ]+)(?: = )(.+)", 3)
+	Local $aOutput = StringRegExp($sData, "([A-Za-z_0-9 ]+)(?: = )(.+)", 3)
 	If Not @error Then
 		Local $aResult[UBound($aOutput) / 2][2]
 		For $i = 0 To UBound($aResult) - 1
