@@ -140,6 +140,8 @@ Func a_GenerateG1($sLine,$aOutput)
 EndFunc
 
 
+
+
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: a_getContentDataBySearch
 ; Description ...:
@@ -157,8 +159,7 @@ Func a_getContentDataBySearch()
 	Local $aDataToGet[0][2],$sLine,$iStartLine,$iEndLineLine,$i = 0
 	Local $fFile = FileOpen($sFile)
 	While $i <= $iFileLinesNumber
-;~ 	While $y <= 1789
-		$sLine = FileReadLine($sfile,$i)
+		$sLine = FileReadLine($fFile)
 		If StringInStr ($sLine,"; BEGIN_LAYER_OBJECT") <> 0 Then
 			$iStartLine = $i
 		EndIf
@@ -317,9 +318,12 @@ EndFunc
 
 func a_readContentData($iFirst,$iEnd)
 	Local $aOutput[0], $sBuffer = ""
+	Local $fFile = FileOpen($sFile)
+	FileReadLine($fFile,$iFirst)
+
 	For $i = 0 To ($iEnd - $iFirst) - 1
-;~ 		$sBuffer = FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
-		$sBuffer = FileReadLine($sFile,$iFirst+$i) & @CRLF
+;~ 		$sBuffer = FileReadLine($sFile&".bak") & @CRLF
+		$sBuffer = FileReadLine($fFile) & @CRLF
 		if @error Then
 			SetError( 0 , @error)
 			Return False

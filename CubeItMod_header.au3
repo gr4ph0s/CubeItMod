@@ -17,8 +17,8 @@ Func a_SearchIntoFile()
 	Local $fFile = FileOpen($sFile)
 ;~ 	While $i <= $iFileLinesNumber
 
-	While $i <= 1789
-		$sLine = FileReadLine($fFile,$i)
+	While $i <= $iFileLinesNumber
+		$sLine = FileReadLine($fFile)
 
 		If StringInStr ($sLine,"; *** G-code Prefix ***") <> 0 Then
 			$aBuffer = StringRegExp($sBuffer, "(?:; \*\*\* )([A-Za-z_ ]+)(\d*)", 3)
@@ -135,9 +135,10 @@ EndFunc
 ; ===============================================================================================================================
 Func a_getSettingsLines($sFirstSetting,$sLastSetting)
 	Local $iStartLine,$iEndLine,$aOutput[1][2],$i = 0
+	Local $fFile = FileOpen($sFile)
 	While $i <= $iFileLinesNumber
 ;~ 		$sLine = FileReadLine($sFile&".bak",$i)
-		$sLine = FileReadLine($sFile,$i)
+		$sLine = FileReadLine($fFile)
 		if StringInStr ($sLine,$sFirstSetting) <> 0 Then ;Looking for $sFirstSetting in the line
 			$iStartLine = Int($i)
 		EndIf
@@ -174,9 +175,11 @@ EndFunc
 ; ===============================================================================================================================
 Func s_readData($aLines)
 	Local $sOutput = ""
+	Local $fFile = FileOpen($sFile)
+	FileReadLine($fFile,$aLines[0][0])
 	For $i = 2 To ($aLines[0][1] - $aLines[0][0]) - 2
 ;~  		$sOutput = $sOutput & FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
- 		$sOutput = $sOutput & FileReadLine($sFile,$aLines[0][0]+$i) & @CRLF
+ 		$sOutput = $sOutput & FileReadLine($fFile) & @CRLF
 		if @error Then
 			SetError( 0 , @error)
 			Return False

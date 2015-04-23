@@ -11,7 +11,7 @@
 	Converter BFB File from KISSlicer - PRO To Cubex 3D printer
 
 #ce ----------------------------------------------------------------------------
-
+$timer = TimerInit()
 #include <Array.au3>
 #include <File.au3>
 #include "CubeItMod_header.au3" ;All functions concerning the header file.
@@ -29,7 +29,7 @@ Global $aOption[9]
 
 
 if b_getHeaderData() Then
-	MsgBox(0,"",$Sup_support_inflate_mm)
+;~ 	MsgBox(0,"",$Sup_support_inflate_mm)
 Else
 	MsgBox(0,@extended,@error)
 EndIf
@@ -56,10 +56,18 @@ EndIf
 ;$aOption[8] = Mx08 RPM
 
 
+
+
+
+
+
+
 $test = a_getContentDataBySearch()
-_ArrayDisplay($test,'bidule1')
-For $i = 0 to UBound($test)-1
-	 $testzz = a_readContentData($test[$i][0],$test[$i][1])
-	 $testfinal = a_setContentArrayData($testzz)
-	 _ArrayDisplay($testfinal,'bidule3')
-Next
+
+;~ _ArrayDisplay($test,'bidule1')
+;~ For $i = 0 to UBound($test)-1
+	$testzz = a_readContentData($test[0][0],$test[0][1])
+	 _ArrayDisplay($testzz,TimerDiff($timer))
+;~ 	 $testfinal = a_setContentArrayData($testzz)
+;~ 	 _ArrayDisplay($testfinal,'bidule3')
+;~ Next
