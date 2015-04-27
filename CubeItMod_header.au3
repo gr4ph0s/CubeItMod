@@ -14,8 +14,8 @@ Local $sFile ,$iFileLinesNumber ;Normally thoses variables are set in the cube.a
 
 Func a_SearchIntoFile()
 	Local $aDataToGet[0][3],$sLine,$aBuffer,$sBuffer,$bIsFirst = True,  $i = 0
-	Local $fFile = FileOpen($sFile)
-;~ 	While $i <= $iFileLinesNumber
+;~ 	Local $fFile = FileOpen($sFile)
+	Local $fFile = FileOpen($sFile&".bak")
 
 	While $i <= $iFileLinesNumber
 		$sLine = FileReadLine($fFile)
@@ -93,7 +93,7 @@ Func b_getSettings($sFirstSetting,$sLastSetting,$sPrefix)
 			SetError( 0 , 1 )
 			Return False
 		EndIf
-
+;~ 	_ArrayDisplay($aPrinterSettingLines)
 	;Get Text From thoses Lines
 	Local $sDataSetting = s_readData($aPrinterSettingLines)
 		If Not IsString($sDataSetting) Then
@@ -107,6 +107,7 @@ Func b_getSettings($sFirstSetting,$sLastSetting,$sPrefix)
 			SetError( 0 , 3 )
 			Return False
 		EndIf
+
 	;Assign Variable to Value
 	n_arrayToVariable($aDataSetting,$sPrefix)
 
@@ -135,9 +136,9 @@ EndFunc
 ; ===============================================================================================================================
 Func a_getSettingsLines($sFirstSetting,$sLastSetting)
 	Local $iStartLine,$iEndLine,$aOutput[1][2],$i = 0
-	Local $fFile = FileOpen($sFile)
+;~ 	Local $fFile = FileOpen($sFile)
+	Local $fFile = FileOpen($sFile&".bak")
 	While $i <= $iFileLinesNumber
-;~ 		$sLine = FileReadLine($sFile&".bak",$i)
 		$sLine = FileReadLine($fFile)
 		if StringInStr ($sLine,$sFirstSetting) <> 0 Then ;Looking for $sFirstSetting in the line
 			$iStartLine = Int($i)
@@ -175,10 +176,10 @@ EndFunc
 ; ===============================================================================================================================
 Func s_readData($aLines)
 	Local $sOutput = ""
-	Local $fFile = FileOpen($sFile)
+;~ 	Local $fFile = FileOpen($sFile)
+	Local $fFile = FileOpen($sFile&".bak")
 	FileReadLine($fFile,$aLines[0][0])
-	For $i = 2 To ($aLines[0][1] - $aLines[0][0]) - 2
-;~  		$sOutput = $sOutput & FileReadLine($sFile&".bak",$aLines[0][0]+$i) & @CRLF
+	For $i = 2 To ($aLines[0][1] - $aLines[0][0])
  		$sOutput = $sOutput & FileReadLine($fFile) & @CRLF
 		if @error Then
 			SetError( 0 , @error)

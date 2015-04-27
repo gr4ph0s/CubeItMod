@@ -2,6 +2,9 @@
 #AutoIt3Wrapper_Outfile=test.exe
 #AutoIt3Wrapper_Run_AU3Check=n
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
+;!Achete Boite cc maitre 200k/u Appro +1 2,5M/u au vivi :)
+
 #cs ----------------------------------------------------------------------------
 
  AutoIt Version : 3.3.12.0
@@ -16,58 +19,31 @@ $timer = TimerInit()
 #include <File.au3>
 #include "CubeItMod_header.au3" ;All functions concerning the header file.
 #include "CubeItMod_content.au3" ;All functions concerning the header file.
+#include "CubeItMod_calcul.au3" ;All functions concerning the header file.
 #include "CubeItMod_misc.au3" ;All miscellaneous functions.
 
 
-Global $sFile = @ScriptDir&'/'&"testV15B117.bfb"
-Global $fFile
+Global $sFile = FileOpenDialog("Select your bfb File",@ScriptDir & "\","BFB Files (*.bfb)",3)
+If @error Then
+	MsgBox(48, "", "No file(s) were selected.")
+	Exit
+EndIf
 Global $iFileLinesNumber = _FileCountLines ($sFile)
 Global $aVersion = a_readVersion()
-Global $aOption[9]
-;~ b_createBackup($sFile)
-;~ f_createFile($sFile)
+b_createBackup($sFile)
 
 
 if b_getHeaderData() Then
-;~ 	MsgBox(0,"",$Sup_support_inflate_mm)
+	if a_getAndWriteData() Then
+		MsgBox(0,"Succes","File created")
+	Else
+		MsgBox(0,@extended,@error)
+	EndIf
 Else
 	MsgBox(0,@extended,@error)
 EndIf
 
-;All code bellow this line are temporary....
-
-;~ Global $aDataToGet[0][3] ; Array for store.[0][0] = sFirstSetting. [0][1] = $sLastSetting. [0][2] = $sLastSetting. Look b_getSettings() for know the use of these variables.
-;~ 	_ArrayAdd($aDataToGet, "; *** G-code Prefix ***|; *** Main G-code ***|contentHeader_")
-;~ $test = a_getContentDataByName($aDataToGet)
-;~ $test = a_readContentData($test)
-;~ $test = a_setContentArrayData($test)
-;~ $test2 = b_WriteData($sFile,$test)
-
-
-
-;$aOption[0] = Extruder ID
-;$aOption[1] = Temperature
-;$aOption[2] = LayerObject
-;$aOption[3] = WorkingMethod
-;$aOption[4] = RPM
-;$aOption[5] = head mm/s
-;$aOption[6] = isFirstLayer
-;$aOption[7] = isCurrentlyPrinting
-;$aOption[8] = Mx08 RPM
 
 
 
 
-
-
-
-
-$test = a_getContentDataBySearch()
-
-;~ _ArrayDisplay($test,'bidule1')
-;~ For $i = 0 to UBound($test)-1
-	$testzz = a_readContentData($test[0][0],$test[0][1])
-	 _ArrayDisplay($testzz,TimerDiff($timer))
-;~ 	 $testfinal = a_setContentArrayData($testzz)
-;~ 	 _ArrayDisplay($testfinal,'bidule3')
-;~ Next

@@ -4,149 +4,318 @@
  Auteur:         Gr4ph0s
 
  Script function:
-	Function To read Data and Assign value with the main content of a BFB File from KISSlicer - PRO
+	Function To read Data and calculated final XYZF value with the main content of a BFB File from KISSlicer - PRO
 
 #ce ----------------------------------------------------------------------------
 
-;I will comment all the functions when I will finnish the managment of the main content
-;So dont worry it will coming and sory if you understand nothing ^^'
-
-;$aOption[0] = Extruder ID
-;$aOption[1] = Temperature
-;$aOption[2] = LayerObject
-;$aOption[3] = WorkingMethod
-;$aOption[4] = RPM
-;$aOption[5] = head mm/s
-;$aOption[6] = isFirstLayer
-;$aOption[7] = isCurrentlyPrinting
-;$aOption[8] = Mx08 RPM
-
+;Some options used for calculated the final value.
+Dim $iExtruderID, $iTemperature, $fLayerObject, $sWorkingMethod, $fRPM, $fHeadmm_s, $bIsFirstLayer, $bIsCurrentlyPrinting, $fMx08RPM
 
 ; #FUNCTION# ====================================================================================================================
-; Name ..........: f_CalculFForPerimeter
-; Description ...: Calculate Speed in Perimeter mode.
-; Syntax ........: f_CalculFForPerimeter()
-; Return values .: return a float of the calculated speed
+; Name ..........: a_GenerateFinalArray
+; Description ...: Generate the final Data
+; Syntax ........: a_GenerateFinalArray($sLine)
+; Parameters ....: $sLine               - A string value.
+; Return values .: 1D Array. Return an array contening the data to be write.
 ; Author ........: Gr4ph0s
-; Link ..........: http://gr4ph0s.free.fr/
+; Remarks .......: $aOutput is a buffer who store data it will be write in the same order as you order for exemple $aOutput[0] will be write before $aOutput[1]
+;				 : By default it will return the current line excepted in some case ;)
+;				 : I was pretty lazy to do all the check during this function... So if you want to do it do it plz... :D
+; Related .......:
+; Link ..........:
+; Example .......: No
 ; ===============================================================================================================================
-Func f_CalculFForPerimeter()
-	Local $bed_roughness_mm,$bed_offset_z_mm,$layer_thickness_mm,$fiber_dia_mm,$extrusion_width_mm,$flowrate_tweak,$gain,$F
-		$bed_roughness_mm = 	Eval("Pri_bed_roughness_mm")
-		$bed_offset_z_mm = 		Eval("Pri_bed_offset_z_mm")
-		$gain = 				Eval("Pri_ext_gain_"&$aOption[0])
-		$layer_thickness_mm = 	Eval("Sty_layer_thickness_mm")
-		$extrusion_width_mm = 	Eval("Sty_extrusion_width_mm")
-		$fiber_dia_mm = 		Eval("Mat"&$aOption[0]&"_fiber_dia_mm")
-		$flowrate_tweak = 		Eval("Mat"&$aOption[0]&"_flowrate_tweak")
-
-		If $aOption[2] == $layer_thickness_mm + $bed_roughness_mm + $bed_offset_z_mm Then
-			$F= Round(Round($aOption[8]) * ($fiber_dia_mm) ^ 2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak * $gain),1 )
-		Else
-			$F = Round((Round($aOption[8]) * $layer_thickness_mm/($layer_thickness_mm + $bed_roughness_mm)) * ($fiber_dia_mm)^2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak  * $gain),1)
+Func a_GenerateFinalArray($sLine)
+	Local $aOutput[0],$aBuffer
+	If StringInStr ($sLine,"M104") <> 0 Then
+		_ArrayAdd($aOutput,$sLine) ; We add the current line to the file.
+		; Look into CubeItMod_Calcul for this function ;)
+		If StringLen(s_GenerateM227()) > 2 Then
+			_ArrayAdd($aOutput,s_GenerateM227())
 		EndIf
-		Return Number($F)
-EndFunc
-
-
-; #FUNCTION# ====================================================================================================================
-; Name ..........: f_CalculFForSolid
-; Description ...: Calculate Speed in Solid mode.
-; Syntax ........: f_CalculFForSolid()
-; Return values .: return a float of the calculated speed
-; Author ........: Gr4ph0s
-; Link ..........: http://gr4ph0s.free.fr/
-; ===============================================================================================================================
-Func f_CalculFForSolid()
-	Local $bed_roughness_mm,$bed_offset_z_mm,$layer_thickness_mm,$fiber_dia_mm,$extrusion_width_mm,$flowrate_tweak,$gain,$F
-		$bed_roughness_mm = 	Eval("Pri_bed_roughness_mm")
-		$bed_offset_z_mm = 		Eval("Pri_bed_offset_z_mm")
-		$gain = 				Eval("Pri_ext_gain_"&$aOption[0])
-		$layer_thickness_mm = 	Eval("Sty_layer_thickness_mm")
-		$extrusion_width_mm = 	Eval("Sty_extrusion_width_mm")
-		$fiber_dia_mm = 		Eval("Mat"&$aOption[0]&"_fiber_dia_mm")
-		$flowrate_tweak = 		Eval("Mat"&$aOption[0]&"_flowrate_tweak")
-
-		If $aOption[2] == $layer_thickness_mm + $bed_roughness_mm + $bed_offset_z_mm Then
-			$F= Round(Round($aOption[8]) * ($fiber_dia_mm) ^ 2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak * $gain),1 )
-		Else
-			$F = Round((Round($aOption[8]) * $layer_thickness_mm/($layer_thickness_mm + $bed_roughness_mm)) * ($fiber_dia_mm)^2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak  * $gain),1)
+		; Look into CubeItMod_Calcul for this function ;)
+		If StringLen(s_GenerateM228()) > 2 Then
+			_ArrayAdd($aOutput,s_GenerateM228())
 		EndIf
-		Return Number($F)
-EndFunc
+		return $aOutput
+	EndIf
 
-; #FUNCTION# ====================================================================================================================
-; Name ..........: f_CalculFForLoop
-; Description ...: Calculate Speed in Loop mode.
-; Syntax ........: f_CalculFForLoop()
-; Return values .: return a float of the calculated speed
-; Author ........: Gr4ph0s
-; Link ..........: http://gr4ph0s.free.fr/
-; ===============================================================================================================================
-Func f_CalculFForLoop()
-	Local $bed_roughness_mm,$bed_offset_z_mm,$layer_thickness_mm,$fiber_dia_mm,$extrusion_width_mm,$flowrate_tweak,$gain,$F
-		$bed_roughness_mm = 	Eval("Pri_bed_roughness_mm")
-		$bed_offset_z_mm = 		Eval("Pri_bed_offset_z_mm")
-		$gain = 				Eval("Pri_ext_gain_"&$aOption[0])
-		$layer_thickness_mm = 	Eval("Sty_layer_thickness_mm")
-		$extrusion_width_mm = 	Eval("Sty_extrusion_width_mm")
-		$fiber_dia_mm = 		Eval("Mat"&$aOption[0]&"_fiber_dia_mm")
-		$flowrate_tweak = 		Eval("Mat"&$aOption[0]&"_flowrate_tweak")
+	If StringInStr ($sLine,"M103") <> 0 Then
+		$bIsFirstLayer = 1
+		Return $aOutput
+	EndIf
 
-		If $aOption[2] == $layer_thickness_mm + $bed_roughness_mm + $bed_offset_z_mm Then
-			$F= Round(Round($aOption[8]) * ($fiber_dia_mm) ^ 2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak * $gain),1 )
-		Else
-			$F = Round((Round($aOption[8]) * $layer_thickness_mm/($layer_thickness_mm + $bed_roughness_mm)) * ($fiber_dia_mm)^2 / (11.82 * $extrusion_width_mm * $layer_thickness_mm * $flowrate_tweak  * $gain),1)
+	If StringInStr ($sLine,"M227") <> 0 Then
+		Return $aOutput
+	EndIf
+
+	If StringInStr ($sLine,"M227") <> 0 Then
+		Return $aOutput
+	EndIf
+
+	If StringInStr ($sLine, "M"&$iExtruderID&"01") <> 0 Then
+		$bIsCurrentlyPrinting = 1
+		_ArrayAdd($aOutput,$sLine)
+		Return $aOutput
+	EndIf
+
+	If StringInStr ($sLine, "M"&$iExtruderID&"08") <> 0 Then
+		$aBuffer = StringRegExp($sLine, "(?:M"&$iExtruderID&"08 S)([\-0-9.]+)", 3)
+		$fMx08RPM = number($aBuffer[0])
+		_ArrayAdd($aOutput,"M"&$iExtruderID&"08 S"&string(Round($fMx08RPM)))
+		Return $aOutput
+	EndIf
+
+	If StringInStr ($sLine,"G1") <> 0 Then
+		;in some case G1 lines Don't change.After M103 then Dont change And if is not printing Dont change.
+		If $bIsFirstLayer == 1 Then
+			_ArrayAdd($aOutput,"M103")
+			$bIsFirstLayer = 0
+			$bIsCurrentlyPrinting = 0
 		EndIf
-		Return Number($F)
+		If $bIsCurrentlyPrinting == 0 Then
+			_ArrayAdd($aOutput,$sLine)
+		Else
+			_ArrayAdd($aOutput,$sLine)
+;~ 			$aOutput = a_GenerateG1($sLine,$aOutput)
+			Return $aOutput
+		EndIf
+		Return $aOutput
+	EndIf
+
+	_ArrayAdd($aOutput,$sLine)
+	Return $aOutput
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
-; Name ..........: f_CalculFForLoop
-; Description ...: Calculate Speed in Loop mode.
-; Syntax ........: f_CalculFForLoop()
-; Return values .: return a float of the calculated speed
+; Name ..........: b_GetOption
+; Description ...: Generate option based on Line started ;
+; Syntax ........: b_GetOption($sLine)
+; Parameters ....: $sLine               - A string value. The current line readed. Normally it's start by a ;
+; Return values .: boolean, True if data are generated.
+; 				 : boolean, False if no data updated but that can happend
+; Remarks .......: Pretty easy function. Plz keep the same format and use Regex if you don't know what is it send me a mail ;)
+; Author ........: Gr4ph0s
+; Link ..........: http://gr4ph0s.free.fr/
+; ===============================================================================================================================
+Func b_GetOption($sLine)
+	Local $aBuffer
+
+	If StringInStr ($sLine,"Warming Extruder") <> 0 Then
+		$aBuffer = StringRegExp($sLine, "(\d+)", 3)
+		$iExtruderID = $aBuffer[0]
+		$iTemperature = $aBuffer[1]
+		Return True
+	EndIf
+
+	If StringInStr ($sLine,"BEGIN_LAYER_OBJECT") <> 0 Then
+		$aBuffer = StringRegExp($sLine, "(\d+.\d+)", 3)
+		$aBuffer = Number($aBuffer[0])
+		$fLayerObject = $aBuffer
+		Return True
+	EndIf
+
+	If StringInStr ($sLine,"[head mm/s]") <> 0 Then
+		$aBuffer = StringRegExp($sLine, "(?:\')(.+)(?:\', )(\d+.\d+)(?: \[RPM\]\, )(\d+.\d+)", 3)
+		$sWorkingMethod = $aBuffer[0]
+		$fRPM = $aBuffer[1]
+		$fHeadmm_s = $aBuffer[2]
+		Return True
+	EndIf
+
+	Return False
+EndFunc
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: a_GenerateG1
+; Description ...: Calculate the new XYZF and add it to the final output array.
+; Syntax ........: a_GenerateG1($sLine, $aOutput)
+; Parameters ....: $sLine               - A string value. Corresponding to the G1 Lines.
+;                  $aOutput             - An array contening the data converted.
+; Return values .: return an array with the current lines with the correct value
+; 				 : False & @error = 0 & @extended = 0 => Working Method is null.
+; 				 : False & @error = 1 & @extended = Error & Extended of StringRegExp
+; 				 : False & @error = 2 & @extended = Current line processed => X = 0
+; 				 : False & @error = 3 & @extended = Current line processed => Y = 0
+; 				 : False & @error = 4 & @extended = Current line processed => Z = 0
+; 				 : False & @error = 5 & @extended = Current line processed => F = 0
+; 				 : False & @error = 6 & @extended = look _ArrayAdd error
+; Remarks .......: Keep it simple ;) If you add new WorkingMethod then Add a function for calculed ;)
 ; Author ........: Gr4ph0s
 ; Link ..........: http://gr4ph0s.free.fr/
 ; ===============================================================================================================================
 Func a_GenerateG1($sLine,$aOutput)
+	;We check if the working method isn't null if yes you got a problem ! :p
+	If StringLen($sWorkingMethod) == 0 Then SetError(0,0,False)
+
 	Local $aBuffer,$iX,$Y,$iZ,$iF
-	$aBuffer = StringRegExp($sLine, "(?:G1 X)([\-0-9.]+)(?: Y)([\-0-9.]+)(?: Z)([\-0-9.]+)(?: F)([\-0-9.]+)", 3)
+	$aBuffer = StringRegExp($sLine, "(?:G1 X)([\-0-9.]+)(?: Y)([\-0-9.]+)(?: Z)([\-0-9.]+)(?: F)([\-0-9.]+)", 3) ;get X Y Z F
+	If @error Then SetError(1,"Error code : "&@error&" & Extended : "&@extended,False)
 	$iX = Number($aBuffer[0])
 	$iY = Number($aBuffer[1])
 	$iZ = Number($aBuffer[2])
 	$iF = Number($aBuffer[3])
 
-
-	If StringInStr($aOption[3],"Perimeter Path") Or StringInStr($aOption[3],"Perimeter") Then
-		$iF = i_CalculFForPerimeter()
-
-	ElseIf StringInStr($aOption[3],"Solid Path") Or StringInStr($aOption[3],"Solid") Then
-		$iF = i_CalculFForSolid()
-
-	ElseIf $aOption[3] == StringInStr($aOption[3],"Loop Path") Or StringInStr($aOption[3],"Loop") Then
-		$iF = i_CalculFForLoop()
-
-	Else
-		If Round($aOption[8]) == 1 Then
-			$iF = Round ($iF/$aOption[8],1)
+	If b_getWorkingMethod("Perimeter Path") Or b_getWorkingMethod("Perimeter") Then
+		;Just an exemple for make different calcul based on the version of the file.
+		;$aVersion[0] = Version and $aVersion[1] = Beta Version ;)
+		If $aVersion[0] = 1.5 AND $aVersion[1] = 1.17 Then
+			$iF = f_CalculFForPerimeterV15B117()
 		Else
-			$iF = Round (Round($aOption[8])*$iF/$aOption[8],1)
+			$iF = f_CalculFForPerimeter()
 		EndIf
+
+	ElseIf b_getWorkingMethod("Solid Path") Or b_getWorkingMethod("Solid") Then
+		$iF = f_CalculFForSolid()
+
+	ElseIf b_getWorkingMethod("Loop Path") Or b_getWorkingMethod("Loop") Then
+		$iF = f_CalculFForLoop()
+
 	EndIf
 
-	_ArrayAdd($aOutput,"G1 X"&$iX&" Y"&$iY&"& Z"&$iZ&" F"&$iF)
+	;check if not 0, For Z don't make an error if first Layer Object = 0
+	If $iX == 0 Then SetError(2,$sLine,False)
+	If $iY == 0 Then SetError(3,$sLine,False)
+	If $iZ == 0 And $fLayerObject <> 0 Then SetError(4,$sLine,False)
+	If $iF == 0 Then SetError(5,$sLine,False)
+
+	_ArrayAdd($aOutput,"G1 X"&$iX&" Y"&$iY&" Z"&$iZ&" F"&$iF)
+	If @error Then SetError(6,@error,False)
+	Return $aOutput
+EndFunc
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: b_getWorkingMethod
+; Description ...: A Simple function for check the working method
+; Syntax ........: b_getWorkingMethod($sToSearch)
+; Parameters ....: $sToSearch           - A string value to search into the working method
+; Return values .: Boolean, True if it's matching
+; 				 : False if not matching
+; Remarks .......: I Did it for clean a_GenerateG1 and don't have each time an iF line who do 3km ;)
+; Related .......: a_GenerateG1()
+; Author ........: Gr4ph0s
+; Link ..........: http://gr4ph0s.free.fr/
+; ===============================================================================================================================
+Func b_getWorkingMethod($sToSearch)
+	If StringInStr($sWorkingMethod,$sToSearch) Then
+		Return True
+	Else
+		Return False
+	EndIf
+EndFunc
+
+Func a_getAndWriteData()
+	Local $aLines,$aReadedData
+	$aLines = a_getLinesDataBySearch()
+	If Not IsArray($aLines) Then SetError(0,@error,False)
+	For $i = 0 to UBound($aLines)-1
+		$aReadedData = a_readContentData($aLines[$i][0],$aLines[$i][1])
+		If Not IsArray($aReadedData) Then SetError(1,@error,False)
+		$aFinalData = a_setContentArrayData($aReadedData)
+		If Not IsArray($aFinalData) Then SetError(2,@error,False)
+		$bfinal = b_WriteData($aFinalData)
+		If Not $bfinal Then SetError(3,@error,False)
+	Next
+EndFunc
+
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: a_getLinesDataBySearch
+; Description ...: Get The lines of each Layer.
+; Syntax ........: a_getLinesDataBySearch()
+; Return values .: Array, contening each layer [x][0] Start of Layer [x][1] End of layer
+; 				 : False & @error = 0 & @extended = 0 => Can't open the file
+; 				 : False & @error = 1 & @extended = @error of FileReadLine
+; 				 : False & @error = 2 & @extended = @error of _ArrayAdd
+; Author ........: Gr4ph0s
+; Link ..........: http://gr4ph0s.free.fr/
+; ===============================================================================================================================
+Func a_getLinesDataBySearch()
+	Local $aDataToGet[0][2],$sLine,$iStartLine,$iEndLineLine,$i = 0
+;~ 	Local $fFile = FileOpen($sFile)
+	Local $fFile = FileOpen($sFile&".bak")
+	If $fFile == -1 Then SetError(0,0,False)
+	While $i <= $iFileLinesNumber
+		$sLine = FileReadLine($fFile)
+		If @error Then SetError(1,@error,False)
+		If StringInStr ($sLine,"; BEGIN_LAYER_OBJECT") <> 0 Then
+			$iStartLine = $i
+		EndIf
+		If StringInStr ($sLine,"; END_LAYER_OBJECT ") <> 0 Then
+			$iEndLineLine = $i
+			_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
+			If @error Then SetError(2,@error,False)
+		EndIf
+		$i += 1
+	WEnd
+	Return $aDataToGet
+EndFunc
+
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: a_setContentArrayData
+; Description ...: Read data from $aReadedData[0] to $aReadedData[1]
+; Syntax ........: a_setContentArrayData($aReadedData)
+; Parameters ....: $aReadedData         - An array of string contening the data to be read.
+; 				 : False & @error = 1 & @extended = 0 => 0 Options get. But dat can be normal so don't worry about it ;)
+; 				 : False & @error = 2 & @extended = 0 => The final Array is not an array...
+; 				 : False & @error = 3 & @extended = 0 => Look _ArrayAdd Error
+; Return values .: Array contening the data to write in the final file.
+; Author ........: Gr4ph0s
+; Link ..........: http://gr4ph0s.free.fr/
+; ===============================================================================================================================
+Func a_setContentArrayData($aReadedData)
+	Local $aOutput[0],$aBuffer
+	;We set data before first layer.
+	$bIsFirstLayer = 1
+	$bIsCurrentlyPrinting = 1
+
+	For $i = 0 To UBound($aReadedData) - 1
+		;Check if the line is starting by a ;
+		If Asc($aReadedData[$i]) == 59 Then
+			;If the line start by a ; that mean its only an option and we don't need it in the final file.
+			If Not b_GetOption($aReadedData[$i]) Then SetError(1,0,False)
+		Else
+			;Generate the final array
+			$aBuffer = a_GenerateFinalArray($aReadedData[$i])
+			If Not IsArray($aBuffer) Then SetError(2,0,False)
+			For $y = 0 To UBound($aBuffer)-1
+				_ArrayAdd($aOutput,$aBuffer[$y])
+				If @error Then SetError(3,@error,False)
+			Next
+		EndIf
+	Next
+
 	Return $aOutput
 EndFunc
 
 
+; #FUNCTION# ====================================================================================================================
+; Name ..........: b_WriteData
+; Description ...: Write data to the final file :)
+; Syntax ........: b_WriteData($aData)
+; Parameters ....: $aData               - An array of String corresponding to each line to write in the final file.
+; Return values .: Boolean, True if success
+; Return values .: Boolean, False if fail
+; Author ........: Gr4ph0s
+; Link ..........: http://gr4ph0s.free.fr/
+; ===============================================================================================================================
+Func b_WriteData($aData)
+	$fFile = FileOpen($sFile,9)
+	for $i = 0 to UBound($aData)-1
+		FileWrite($fFile,StringRegExpReplace($aData[$i], "\r\n|\r|\n", "")&@CRLF)
+		If @error Then SetError(0,@error&" line: "&$i,False)
+	Next
+	Return True
+EndFunc
 
 
 ; #FUNCTION# ====================================================================================================================
-; Name ..........: a_getContentDataBySearch
-; Description ...:
-; Syntax ........: a_getContentDataBySearch()
-; Parameters ....:
+; Name ..........: a_readContentData
+; Description ...: Read Data between 2 lines
+; Syntax ........: a_readContentData($iFirst, $iEnd)
+; Parameters ....: $iFirst              - An integer value.
+;                  $iEnd                - An integer value.
 ; Return values .: None
 ; Author ........: Your Name
 ; Modified ......:
@@ -155,174 +324,13 @@ EndFunc
 ; Link ..........:
 ; Example .......: No
 ; ===============================================================================================================================
-Func a_getContentDataBySearch()
-	Local $aDataToGet[0][2],$sLine,$iStartLine,$iEndLineLine,$i = 0
-	Local $fFile = FileOpen($sFile)
-	While $i <= $iFileLinesNumber
-		$sLine = FileReadLine($fFile)
-		If StringInStr ($sLine,"; BEGIN_LAYER_OBJECT") <> 0 Then
-			$iStartLine = $i
-		EndIf
-		If StringInStr ($sLine,"; END_LAYER_OBJECT ") <> 0 Then
-			$iEndLineLine = $i
-			_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
-		EndIf
-		$i += 1
-	WEnd
-	Return $aDataToGet
-EndFunc
-Func a_setContentArrayData($aReadedData)
-	Local $aOutput[0],$aBuffer
-
-	$aOption[6] = 1
-	$aOption[7] = 1
-
-	For $i = 0 To UBound($aReadedData) - 1
-		If Asc($aReadedData[$i]) == 59 Then
-			$aOption = a_GetOption($aReadedData[$i])
-		Else
-			$aBuffer = s_GenerateFinalArray($aReadedData[$i])
-			For $y = 0 To UBound($aBuffer)-1
-				_ArrayAdd($aOutput,$aBuffer[$y])
-			Next
-		EndIf
-	Next
-
-	Return $aOutput
-EndFunc
-
-Func a_GetOption($sLine)
-	Local $vBuffer, $aBuffer
-
-	If StringInStr ($sLine,"Warming Extruder") <> 0 Then
-		$aBuffer = StringRegExp($sLine, "(\d+)", 3)
-		$aOption[0] = $aBuffer[0]
-		$aOption[1] = $aBuffer[1]
-	EndIf
-
-	If StringInStr ($sLine,"BEGIN_LAYER_OBJECT") <> 0 Then
-		$aBuffer = StringRegExp($sLine, "(\d+.\d+)", 3)
-		$aBuffer = Number($aBuffer[0])
-		$aOption[2] = $aBuffer
-	EndIf
-
-	If StringInStr ($sLine,"[head mm/s]") <> 0 Then
-		$aBuffer = StringRegExp($sLine, "(?:\')(.+)(?:\', )(\d+.\d+)(?: \[RPM\]\, )(\d+.\d+)", 3)
-		$aOption[3] = $aBuffer[0]
-		$aOption[4] = $aBuffer[1]
-		$aOption[5] = $aBuffer[2]
-;~ 		_ArrayDisplay($aOption)
-	EndIf
-
-	return $aOption
-EndFunc
-
-Func s_GenerateFinalArray($sLine)
-	Local $aOutput[0],$aBuffer
-	If StringInStr ($sLine,"M104") <> 0 Then
-		_ArrayAdd($aOutput,$sLine)
-		$aOutput = a_GenerateM227($aOutput)
-		$aOutput = a_GenerateM228($aOutput)
-		return $aOutput
-	EndIf
-
-	If StringInStr ($sLine,"M103") <> 0 Then
-		$aOption[6] = 1
-		Return $aOutput
-	EndIf
-
-	If StringInStr ($sLine,"M227") <> 0 Then
-		Return $aOutput
-	EndIf
-
-	If StringInStr ($sLine,"M227") <> 0 Then
-		Return $aOutput
-	EndIf
-
-	If StringInStr ($sLine, "M"&$aOption[0]&"01") <> 0 Then
-			$aOption[7] = 1
-			_ArrayAdd($aOutput,$sLine)
-			Return $aOutput
-	EndIf
-
-	If StringInStr ($sLine, "M"&$aOption[0]&"08") <> 0 Then
-		$aBuffer = StringRegExp($sLine, "(?:M"&$aOption[0]&"08 S)([\-0-9.]+)", 3)
-		$aOption[8] = number($aBuffer[0])
-
-		_ArrayAdd($aOutput,"M"&$aOption[0]&"08 S"&string(Round($aOption[8])))
-		Return $aOutput
-	EndIf
-
-	If StringInStr ($sLine,"G1") <> 0 Then
-		If $aOption[6] == 1 Then
-			_ArrayAdd($aOutput,"M103")
-			$aOption[6] = 0
-			$aOption[7] = 0
-		EndIf
-		If $aOption[7] == 0 Then
-			_ArrayAdd($aOutput,$sLine)
-		Else
-			$aOutput = a_GenerateG1($sLine,$aOutput)
-			Return $aOutput
-		EndIf
-		Return $aOutput
-	EndIf
-
-
-
-	_ArrayAdd($aOutput,$sLine)
-	Return $aOutput
-EndFunc
-
-
-Func a_GenerateM227($aOutput)
-	If $Sty_use_destring = 1 Then
-		Local $P = int(Eval("Mat"&$aOption[0]&"_destring_prime")*2962)
-		Local $S = int(Eval("Mat"&$aOption[0]&"_destring_suck")*2962)
-		_ArrayAdd($aOutput,"M227 P"& $P &" S" & $S)
-	EndIf
-	Return $aOutput
-EndFunc
-
-
-Func a_GenerateM228($aOutput)
-	If $Pri_fan_pwm = 1 Then
-		Local $P = int(Eval("Mat"&$aOption[0]&"_sec_per_C_per_C")*2962)
-		Local $S = int(Eval("Mat"&$aOption[0]&"_cost_per_cm3")*2962)
-		_ArrayAdd($aOutput,"M228 P"& $P &" S" & $S)
-	EndIf
-	Return $aOutput
-EndFunc
-
-
-
-Func b_WriteData($fFile,$aData)
-	for $i = 0 to UBound($aData)-1
-		FileWriteLine($fFile,$aData[$i])
-	Next
-EndFunc
-
-
-Func a_getContentDataByName($aDataToGet)
-	Local $aLines
-	For $i = 0 To UBound($aDataToGet) - 1
-		$aLines = a_getSettingsLines($aDataToGet[$i][0],$aDataToGet[$i][1])
-		If Not IsArray($aLines) Then
-			SetError(0,$i,"Can't Find "& StringRegExp($aDataToGet[$i][0], "([A-Za-z_ ]+ )", 3))
-			Return False
-		EndIf
-	Next
-	Return $aLines
-EndFunc
-
-
-func a_readContentData($iFirst,$iEnd)
+Func a_readContentData($iFirst,$iEnd)
 	Local $aOutput[0], $sBuffer = ""
-	Local $fFile = FileOpen($sFile)
+;~ 	Local $fFile = FileOpen($sFile)
+	Local $fFile = FileOpen($sFile&".bak")
 	FileReadLine($fFile,$iFirst)
 
 	For $i = 0 To ($iEnd - $iFirst) - 1
-;~ 		$sBuffer = FileReadLine($sFile&".bak") & @CRLF
 		$sBuffer = FileReadLine($fFile) & @CRLF
 		if @error Then
 			SetError( 0 , @error)
