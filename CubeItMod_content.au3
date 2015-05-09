@@ -9,7 +9,8 @@
 #ce ----------------------------------------------------------------------------
 
 ;Some options used for calculated the final value.
-Dim $iExtruderID, $iTemperature, $fLayerObject, $sWorkingMethod, $fRPM, $fHeadmm_s, $bIsFirstLayer, $bIsCurrentlyPrinting, $fMx08RPM
+Dim $iExtruderID, $iTemperature, $fLayerObject, $sWorkingMethod, $fRPM, $fHeadmm_s, $bIsBeforeExtruderOn, $bIsCurrentlyPrinting, $fMx08RPM
+Dim $bIsFirstM108 = True, $bIsFirstM542 = True
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: a_GenerateFinalArray
@@ -27,25 +28,40 @@ Dim $iExtruderID, $iTemperature, $fLayerObject, $sWorkingMethod, $fRPM, $fHeadmm
 ; ===============================================================================================================================
 Func a_GenerateFinalArray($sLine)
 	Local $aOutput[0],$aBuffer
-	If StringInStr ($sLine,"M104") <> 0 Then
-		_ArrayAdd($aOutput,$sLine) ; We add the current line to the file.
-		; Look into CubeItMod_Calcul for this function ;)
-		If StringLen(s_GenerateM227()) > 2 Then
-			_ArrayAdd($aOutput,s_GenerateM227())
-		EndIf
-		; Look into CubeItMod_Calcul for this function ;)
-		If StringLen(s_GenerateM228()) > 2 Then
-			_ArrayAdd($aOutput,s_GenerateM228())
+	If StringInStr ($sLine,"M"&$iExtruderID&"04") <> 0 And $iTemperature <> 0 Then
+		If $iTemperature == 0 Then
+			_ArrayAdd($aOutput,$sLine)
+		Else
+			$bIsFirstM108 = True
+			_ArrayAdd($aOutput,$sLine) ; We add the current line to the file.
+			; Look into CubeItMod_Calcul for this function ;)
+				_ArrayAdd($aOutput,s_GenerateM227())
+			; Look into CubeItMod_Calcul for this function ;)
+			;$aVersion[0] = Version and $aVersion[1] = Beta Version ;)
+			If $aVersion[0] = 1.5 AND $aVersion[1] = 1.17 Then
+				_ArrayAdd($aOutput,s_GenerateM228V15B117())
+			Else
+				_ArrayAdd($aOutput,s_GenerateM228())
+			EndIf
 		EndIf
 		return $aOutput
 	EndIf
 
-	If StringInStr ($sLine,"M103") <> 0 Then
-		$bIsFirstLayer = 1
-		Return $aOutput
-	EndIf
+;~ 	If StringInStr ($sLine,"M542") <> 0 Then
+;~ 		If $bIsFirstM542 Then
+;~ 			$bIsFirstM542 = False
+;~ 			Return $aOutput
+;~ 		Else
+;~ 			_ArrayAdd($aOutput,"M542")
+;~ 			$bIsFirstM108 = True
+;~ 			Return $aOutput
+;~ 		EndIf
+;~ 	EndIf
 
-	If StringInStr ($sLine,"M227") <> 0 Then
+
+	If StringInStr ($sLine,"M103") <> 0 Then
+		$bIsBeforeExtruderOn = 1
+		_ArrayAdd($aOutput,$sLine)
 		Return $aOutput
 	EndIf
 
@@ -63,14 +79,17 @@ Func a_GenerateFinalArray($sLine)
 		$aBuffer = StringRegExp($sLine, "(?:M"&$iExtruderID&"08 S)([\-0-9.]+)", 3)
 		$fMx08RPM = number($aBuffer[0])
 		_ArrayAdd($aOutput,"M"&$iExtruderID&"08 S"&string(Round($fMx08RPM)))
+		If $bIsFirstM108 Then
+			_ArrayAdd($aOutput,"M103")
+			$bIsFirstM108 = False
+		EndIf
 		Return $aOutput
 	EndIf
 
 	If StringInStr ($sLine,"G1") <> 0 Then
 		;in some case G1 lines Don't change.After M103 then Dont change And if is not printing Dont change.
-		If $bIsFirstLayer == 1 Then
-			_ArrayAdd($aOutput,"M103")
-			$bIsFirstLayer = 0
+		If $bIsBeforeExtruderOn == 1 Then
+			$bIsBeforeExtruderOn = 0
 			$bIsCurrentlyPrinting = 0
 		EndIf
 		If $bIsCurrentlyPrinting == 0 Then
@@ -102,6 +121,13 @@ Func b_GetOption($sLine)
 	Local $aBuffer
 
 	If StringInStr ($sLine,"Warming Extruder") <> 0 Then
+		$aBuffer = StringRegExp($sLine, "(\d+)", 3)
+		$iExtruderID = $aBuffer[0]
+		$iTemperature = $aBuffer[1]
+		Return True
+	EndIf
+
+	If StringInStr ($sLine,"Cooling Extruder") <> 0 Then
 		$aBuffer = StringRegExp($sLine, "(\d+)", 3)
 		$iExtruderID = $aBuffer[0]
 		$iTemperature = $aBuffer[1]
@@ -216,8 +242,8 @@ Func a_getAndWriteData()
 		$bfinal = b_WriteData($aFinalData)
 		If Not $bfinal Then SetError(3,@error,False)
 	Next
+		Return True
 EndFunc
-
 
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: a_getLinesDataBySearch
@@ -235,19 +261,55 @@ Func a_getLinesDataBySearch()
 ;~ 	Local $fFile = FileOpen($sFile)
 	Local $fFile = FileOpen($sFile&".bak")
 	If $fFile == -1 Then SetError(0,0,False)
-	While $i <= $iFileLinesNumber
+		;Begin Search for prefix
+		While $i <= $iFileLinesNumber
 		$sLine = FileReadLine($fFile)
-		If @error Then SetError(1,@error,False)
-		If StringInStr ($sLine,"; BEGIN_LAYER_OBJECT") <> 0 Then
-			$iStartLine = $i
-		EndIf
-		If StringInStr ($sLine,"; END_LAYER_OBJECT ") <> 0 Then
-			$iEndLineLine = $i
-			_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
-			If @error Then SetError(2,@error,False)
-		EndIf
-		$i += 1
-	WEnd
+			If @error Then SetError(1,@error,False)
+			If StringInStr ($sLine,"; *** G-code Prefix ***") <> 0 Then
+				$iStartLine = $i
+			EndIf
+			If StringInStr ($sLine,"; *** Main G-code ***") <> 0 Then
+				$iEndLineLine = $i
+				_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
+				If @error Then SetError(2,@error,False)
+				ExitLoop
+			EndIf
+			$i += 1
+		WEnd
+		;End Search for prefix
+
+		;Begin Search for content
+		While $i <= $iFileLinesNumber
+		$sLine = FileReadLine($fFile)
+			If @error Then SetError(1,@error,False)
+			If StringInStr ($sLine,"; Guaranteed same extruder") <> 0 Then
+					ExitLoop
+			EndIf
+			If StringInStr ($sLine,"; BEGIN_LAYER_OBJECT") <> 0 Then
+				$iStartLine = $i
+			EndIf
+			If StringInStr ($sLine,"; END_LAYER_OBJECT ") <> 0 Then
+				$iEndLineLine = $i
+				_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
+				If @error Then SetError(2,@error,False)
+			EndIf
+			$i += 1
+		WEnd
+		;End Search for content
+
+		;Begin Search for suffix
+		While $i <= $iFileLinesNumber
+		$iStartLine = $iEndLineLine + 1
+		$sLine = FileReadLine($fFile)
+			If @error Then SetError(1,@error,False)
+			If StringInStr ($sLine,"Estimated Build Time") <> 0 Then
+				$iEndLineLine = $i
+				_ArrayAdd($aDataToGet,$iStartLine&"|"&$iEndLineLine)
+				If @error Then SetError(2,@error,False)
+			EndIf
+			$i += 1
+		WEnd
+		;End Search for suffix
 	Return $aDataToGet
 EndFunc
 
@@ -267,8 +329,10 @@ EndFunc
 Func a_setContentArrayData($aReadedData)
 	Local $aOutput[0],$aBuffer
 	;We set data before first layer.
-	$bIsFirstLayer = 1
+	$bIsBeforeExtruderOn = 1
 	$bIsCurrentlyPrinting = 1
+
+
 
 	For $i = 0 To UBound($aReadedData) - 1
 		;Check if the line is starting by a ;
@@ -330,7 +394,7 @@ Func a_readContentData($iFirst,$iEnd)
 	Local $fFile = FileOpen($sFile&".bak")
 	FileReadLine($fFile,$iFirst)
 
-	For $i = 0 To ($iEnd - $iFirst) - 1
+	For $i = 0 To ($iEnd - $iFirst)
 		$sBuffer = FileReadLine($fFile) & @CRLF
 		if @error Then
 			SetError( 0 , @error)

@@ -126,11 +126,20 @@ Func s_GenerateM227()
 	EndIf
 EndFunc
 
-
 Func s_GenerateM228()
 	If $Pri_fan_pwm = 1 Then
 		Local $iP = int(Eval("Mat"&$iExtruderID&"_sec_per_C_per_C")*2962)
 		Local $iS = int(Eval("Mat"&$iExtruderID&"_cost_per_cm3")*2962)
+
+		Return "M228 P"& $iP &" S" & $iS
+	EndIf
+EndFunc
+
+Func s_GenerateM228V15B117()
+	If $Pri_fan_pwm = 1 Then
+		Local $iP = int(Eval("Mat"&$iExtruderID&"_destring_speed_mm_per_s")*2962)
+		Local $iS = int(Eval("Mat"&$iExtruderID&"_cost_per_cm3")*2962)
+
 		;We check all data is different of 0
 		If $iP <> 0 And $iS <> 0 Then
 			Return "M228 P"& $iP &" S" & $iS
